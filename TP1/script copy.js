@@ -57,6 +57,7 @@ const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerH
 camera.position.set(10, 10, 20);
 scene.add(camera);
 
+
 // Renderer
 const canvas = document.querySelector(".webgl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -73,9 +74,9 @@ window.addEventListener('resize', () => {
     renderer.render(scene, camera);
 });
 
-// Controls
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
+// // Controls
+// const controls = new OrbitControls(camera, canvas);
+// controls.enableDamping = true;
 
 // Stats
 const container = document.getElementById('container');
@@ -399,8 +400,22 @@ gsap.ticker.add(() => {
       }
     }
 
+    // Camera qui suit la position du robot 
+    // let originRobot = new THREE.Vector3(0, 0, 0);
+    // 
+    const localCameraPosition = new THREE.Vector3(0, 5, -25); 
+
+    figure.localToWorld(localCameraPosition);
+    camera.position.copy(localCameraPosition);
+
+    camera.lookAt(new THREE.Vector3(figure.position.x, 5, figure.position.z));
+
+    
+
+    camera.updateProjectionMatrix();
+    
+
     figure.update(0.01);
-    controls.update();
     stats.update();
     renderer.render(scene, camera);
 });
