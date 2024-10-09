@@ -4,6 +4,9 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+
 gsap.registerPlugin(CustomEase);
 
 // Scene
@@ -200,6 +203,33 @@ let jumpTimeline = gsap.timeline();
 let rySpeed = 0;
 let walkSpeed = 0;
 
+// Text facing the camera
+let text = null;
+const fontLoader = new FontLoader();
+const myFont = "helvetiker_regular.typeface.json";
+const textMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+function createText(count) {
+    scene.remove(text);
+    fontLoader.load(myFont, (font) => {
+        const textGeometry = new TextGeometry('Shots: ' + count, {
+            font: font,
+            size: 1,
+            height: 0.2,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+            bevelOffset: 0,
+            bevelSegments: 5
+        });
+        text = new THREE.Mesh(textGeometry, textMaterial);
+        text.position.set(0, 2, 0);
+        scene.add(text);
+    });
+}
+createText(0);
+
+
 let leftKeyIsDown = false;
 let rightKeyIsDown = false;
 let upKeyIsDown = false;
@@ -286,7 +316,7 @@ class Bullet extends THREE.Group{
     this.life = 200;
 
     this.bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 32, 32),
+      new THREE.SphereGeometry(0.1, 5, 5),
       new THREE.MeshLambertMaterial({ color: 0xff0000 })
     );
     this.bullet.castShadow = true;
@@ -312,14 +342,18 @@ class Bullet extends THREE.Group{
 let bullets = [];
 document.addEventListener('keydown', (e) => {
   if(e.key == 'f') {
+    createText(bullets.length);
     let bullet = new Bullet(
       figure.params.x,
       figure.params.y,
       figure.params.z,
-      figure.params.ry
+      figure.params.ry,
+      
     )
+    
     scene.add(bullet);
     bullets.push(bullet);
+    
   }
 }
 );
@@ -393,12 +427,14 @@ gsap.ticker.add(() => {
     for(let i = bullets.length -1 ; i >= 0; i--) {
         if(bullets[i].isAlive()) {
           bullets[i].update();
+          
         }
         else {
           bullets.splice(i, 1);
           scene.remove(bullets[i]);
       }
     }
+
 
     // Camera qui suit la position du robot 
     // let originRobot = new THREE.Vector3(0, 0, 0);
@@ -410,10 +446,17 @@ gsap.ticker.add(() => {
 
     camera.lookAt(new THREE.Vector3(figure.position.x, 5, figure.position.z));
 
-    
-
     camera.updateProjectionMatrix();
-    
+
+    // Update the position and orientation of the text so that it always appears
+    if (text) {
+      const localTextPosition = new THREE.Vector3(-2, 5, -20);
+      const textPosition = camera.localToWorld(localTextPosition);
+      text.lookAt(camera.position);
+      text.position.copy(textPosition);
+    }
+
+    renderer.render(scene, camera);
 
     figure.update(0.01);
     stats.update();
